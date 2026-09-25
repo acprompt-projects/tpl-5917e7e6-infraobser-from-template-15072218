@@ -1,0 +1,36 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "grafana"
+    static_configs:
+      - targets: ["grafana:3000"]
+
+  - job_name: "microservices"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:8080"]
+        labels:
+          env: "development"
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 15s
+        filters:
+          - name: label
+            values: ["prometheus.scrape=true"]
+    relabel_configs:
+      - source_labels: ["__meta_docker_container_label_prometheus_job"]
+        target_label: "job"
+      - source_labels: ["__meta_docker_container_label_prometheus_port"]
+        target_label: "__address__"
+        regex: "(.+):(.+)"
+        replacement: "${1}:${2}"
+      - source_labels: ["__meta_docker_container_name"]
+        target_label: "container"
+        regex: "/(.*)"
+        replacement: "${1}"
