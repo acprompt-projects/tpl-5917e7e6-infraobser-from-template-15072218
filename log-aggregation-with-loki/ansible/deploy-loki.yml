@@ -1,0 +1,76 @@
+---
+- name: Deploy Loki and Promtail for log aggregation
+  hosts: observability
+  become: true
+  vars:
+    loki_version: "2.9.3"
+    loki_dir: /opt/loki
+    loki_port: 3100
+    promtail_dir: /opt/promtail
+
+  tasks:
+    - name: Ensure deployment directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ loki_dir }}"
+        - "{{ loki_dir }}/data"
+        - "{{ promtail_dir }}"
+
+    - name: Copy Loki configuration
+      ansible.builtin.copy:
+        src: "../loki-config.yml"
+        dest: "{{ loki_dir }}/loki-config.yml"
+        mode: "0644"
+      notify: Restart loki
+
+    - name: Copy Promtail configuration
+      ansible.builtin.copy:
+        src: "../promtail-config.yml"
+        dest: "{{ promtail_dir }}/promtail-config.yml"
+        mode: "0644"
+      notify: Restart promtail
+
+    - name: Run Loki container
+      community.docker.docker_container:
+        name: loki
+        image: "grafana/loki:{{ loki_version }}"
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
+          - "{{ loki_port }}:3100"
+        volumes:
+          - "{{ loki_dir }}/data:/loki"
+          - "{{ loki_dir }}/loki-config.yml:/etc/loki/local-config.yaml"
+        command: "-config.file=/etc/loki/local-config.yaml"
+        networks:
+          - name: observability-net
+
+    - name: Run Promtail container
+      community.docker.docker_container:
+        name: promtail
+        image: "grafana/promtail:{{ loki_version }}"
+        state: started
+        restart_policy: unless-stopped
+        volumes:
+          - "/var/log:/var/log:ro"
+          - "/var/lib/docker/containers:/var/lib/docker/containers:ro"
+          - "{{ promtail_dir }}/promtail-config.yml:/etc/promtail/config.yml"
+        command: "-config.file=/etc/promtail/config.yml"
+        networks:
+          - name: observability-net
+
+  handlers:
+    - name: Restart loki
+      community.docker.docker_container:
+        name: loki
+        state: started
+        restart: true
+
+    - name: Restart promtail
+      community.docker.docker_container:
+        name: promtail
+        state: started
+        restart: true
