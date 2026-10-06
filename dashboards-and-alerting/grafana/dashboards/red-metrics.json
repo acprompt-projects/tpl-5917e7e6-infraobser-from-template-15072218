@@ -1,0 +1,131 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=~\"$service\"}[$__rate_interval])) by (job)",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+        }
+      }
+    },
+    {
+      "title": "Error Rate (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{job=~\"$service\",code=~\"5..\"}[$__rate_interval])) by (job) / sum(rate(http_requests_total{job=~\"$service\"}[$__rate_interval])) by (job) * 100",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0, "max": 100,
+          "thresholds": {
+            "steps": [
+              { "value": null, "color": "green" },
+              { "value": 1, "color": "yellow" },
+              { "value": 5, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Latency P50 / P95 / P99",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "targets": [
+        { "expr": "histogram_quantile(0.5, sum(rate(http_request_duration_seconds_bucket{job=~\"$service\"}[$__rate_interval])) by (le,job))", "legendFormat": "{{job}} p50", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~\"$service\"}[$__rate_interval])) by (le,job))", "legendFormat": "{{job}} p95", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=~\"$service\"}[$__rate_interval])) by (le,job))", "legendFormat": "{{job}} p99", "refId": "C" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              { "value": null, "color": "green" },
+              { "value": 0.5, "color": "yellow" },
+              { "value": 1, "color": "red" }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Top Error Endpoints",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "topk(10, sum(rate(http_requests_total{job=~\"$service\",code=~\"5..\"}[$__rate_interval])) by (job,method,handler))",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "unit", "value": "reqps" }] }
+        ]
+      }
+    },
+    {
+      "title": "Latency Heatmap",
+      "type": "heatmap",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(http_request_duration_seconds_bucket{job=~\"$service\"}[$__rate_interval])) by (le)",
+          "format": "heatmap",
+          "refId": "A"
+        }
+      ],
+      "options": { "calculate": false, "calculation": {}, "cellGap": 2, "cellRadius": 0, "cellValues": {}, "color": { "exponent": 0.5, "fill": "dark-orange", "mode": "scheme", "reverse": false, "scale": "exponential", "scheme": "Oranges", "steps": 64 }, "exemplars": { "enable": false }, "filterValues": { "le": 1e-9 }, "legend": { "show": true }, "rowsFrame": { "layout": "auto" }, "showValue": "never", "tooltip": { "show": true, "yHistogram": false }, "yAxis": { "axisPlacement": "left", "reverse": false, "unit": "s" } }
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["red", "microservices"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "definition": "label_values(http_requests_total, job)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Service",
+        "multi": true,
+        "name": "service",
+        "options": [],
+        "query": { "qryType": 1, "query": "label_values(http_requests_total, job)" },
+        "refresh": 2,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "RED Metrics - Microservices",
+  "uid": "red-microservices",
+  "version": 1
+}
