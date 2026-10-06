@@ -1,0 +1,115 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "CPU Utilization (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[$__rate_interval])) * 100)", "legendFormat": "{{instance}}", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "thresholds": { "steps": [{ "value": null, "color": "green" }, { "value": 70, "color": "yellow" }, { "value": 90, "color": "red" }] }
+        }
+      }
+    },
+    {
+      "title": "Memory Utilization (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "targets": [
+        { "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100", "legendFormat": "{{instance}}", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "thresholds": { "steps": [{ "value": null, "color": "green" }, { "value": 75, "color": "yellow" }, { "value": 90, "color": "red" }] }
+        }
+      }
+    },
+    {
+      "title": "Disk I/O Utilization (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "targets": [
+        { "expr": "rate(node_disk_io_time_seconds_total[$__rate_interval]) * 100", "legendFormat": "{{instance}} {{device}}", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": { "steps": [{ "value": null, "color": "green" }, { "value": 80, "color": "yellow" }, { "value": 95, "color": "red" }] }
+        }
+      }
+    },
+    {
+      "title": "CPU Saturation (Run Queue)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "rate(node_sched_context_switches_total[$__rate_interval])", "legendFormat": "{{instance}} ctxsw", "refId": "A" },
+        { "expr": "avg(node_load1) by (instance)", "legendFormat": "{{instance}} load1", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 } } }
+    },
+    {
+      "title": "Memory Saturation (OOM / Swap)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "targets": [
+        { "expr": "rate(node_vmstat_pgmajfault[$__rate_interval])", "legendFormat": "{{instance}} majfault", "refId": "A" },
+        { "expr": "rate(node_swap_io_bytes_total[$__rate_interval])", "legendFormat": "{{instance}} swap_io", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 } } }
+    },
+    {
+      "title": "Disk Saturation (Queue Depth)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "targets": [
+        { "expr": "rate(node_disk_discards_completed_seconds_total[$__rate_interval]) + rate(node_disk_read_time_seconds_total[$__rate_interval]) + rate(node_disk_write_time_seconds_total[$__rate_interval])", "legendFormat": "{{instance}} {{device}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 } } }
+    },
+    {
+      "title": "Network Interface Errors",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "rate(node_net_stat_Tcp_RetransSegs[$__rate_interval])", "legendFormat": "{{instance}} tcp_retrans", "refId": "A" },
+        { "expr": "rate(node_network_receive_errs_total[$__rate_interval])", "legendFormat": "{{instance}} {{device}} rx_err", "refId": "B" },
+        { "expr": "rate(node_network_transmit_errs_total[$__rate_interval])", "legendFormat": "{{instance}} {{device}} tx_err", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 } } }
+    },
+    {
+      "title": "Filesystem Usage (%)",
+      "type": "gauge",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "expr": "(1 - (node_filesystem_avail_bytes{fstype!~\"tmpfs|nsfs\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|nsfs\"})) * 100", "legendFormat": "{{instance}} {{mountpoint}}", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent", "min": 0, "max": 100,
+          "thresholds": { "steps": [{ "value": null, "color": "green" }, { "value": 80, "color": "yellow" }, { "value": 95, "color": "red" }] }
+        },
+        "overrides": []
+      }
+    }
+  ],
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["use", "infrastructure"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "USE Metrics - Infrastructure",
+  "uid": "use-infrastructure",
+  "version": 1
+}
